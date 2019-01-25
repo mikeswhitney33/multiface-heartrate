@@ -1,0 +1,6 @@
+[submodule "PyEVM"]
+	path = PyEVM
+	url = ./
+[submodule "face_recognition"]
+	path = face_recognition
+	url = ./
