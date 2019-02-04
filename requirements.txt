@@ -1,0 +1,3 @@
+kivy
+face_recognition
+cv2

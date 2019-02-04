@@ -21,6 +21,7 @@ class CamApp(App):
         #opencv2 stuffs
         self.capture = cv2.VideoCapture(0)
         self.queue = []
+        self.hr = 0
 
         Clock.schedule_interval(self.update, 1.0/33.0)
         return layout
@@ -72,22 +73,21 @@ class CamApp(App):
 
             # Draw a box around the face
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-            # Draw a label with a name below the face
-            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-            
+
             # faces.append(frame[top:bottom, left:right,:])
 
             self.queue.append(self.crop_center(np.array(frame[top:bottom, left:right,:]), 80, 80))
 
-            heart_rate = 0
-
             if len(self.queue) >= 30:
                 frames = np.array(self.queue[:30])
                 self.queue = []
-                heart_rate = evm.find_heart_rate(frames, 30, 0.8, 1.0, alpha=100)
+                self.hr = evm.find_heart_rate(frames, self.capture.get(cv2.CAP_PROP_FPS), 0.8, 1.0, alpha=20)
 
             font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, str(heart_rate), (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+
+            # Draw a label with a name below the face
+            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+            cv2.putText(frame, str(self.hr), (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
         self.write_frame(frame)
 
