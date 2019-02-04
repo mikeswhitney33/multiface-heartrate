@@ -20,7 +20,7 @@ class CamApp(App):
         layout.add_widget(self.img1)
         #opencv2 stuffs
         self.capture = cv2.VideoCapture(0)
-        self.queue = np.array([])
+        self.queue = []
 
         Clock.schedule_interval(self.update, 1.0/33.0)
         return layout
@@ -32,6 +32,12 @@ class CamApp(App):
         texture1.blit_buffer(buffer, colorfmt='bgr', bufferfmt='ubyte')
         # display image from the texture
         self.img1.texture = texture1
+
+    def crop_center(self, img,cropx,cropy):
+        y,x, _ = img.shape
+        startx = x//2-(cropx//2)
+        starty = y//2-(cropy//2)    
+        return img[starty:starty+cropy,startx:startx+cropx,:]
 
     def update(self, dt):
 
@@ -71,12 +77,13 @@ class CamApp(App):
             
             # faces.append(frame[top:bottom, left:right,:])
 
-            self.queue = np.append(self.queue, frame[top:bottom, left:right,:])
+            self.queue.append(self.crop_center(np.array(frame[top:bottom, left:right,:]), 80, 80))
 
             heart_rate = 0
+
             if len(self.queue) >= 30:
                 frames = np.array(self.queue[:30])
-                self.queue = np.array([])
+                self.queue = []
                 heart_rate = evm.find_heart_rate(frames, 30, 0.8, 1.0, alpha=100)
 
             font = cv2.FONT_HERSHEY_DUPLEX
