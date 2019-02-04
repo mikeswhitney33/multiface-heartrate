@@ -10,17 +10,7 @@ import numpy as np
 import face_recognition
 import cv2
 
-from PyEVM import EVM
-
-#magnify color
-def magnify_color(t, f,low,high,levels=3,amplification=20):
-    # t,f=load_video(video_name)
-    gau_video=EVM.gaussian_video(t,levels=levels)
-    filtered_tensor=EVM.temporal_ideal_filter(gau_video,low,high,f)
-    amplified_video=EVM.amplify_video(filtered_tensor,amplification=amplification)
-    final=EVM.reconstract_video(amplified_video,t,levels=3)
-    return final
-    # save_video(final)
+import evm
 
 def faces_abstraction(video_capture, with_kivy=True, self=None):
 
@@ -29,7 +19,7 @@ def faces_abstraction(video_capture, with_kivy=True, self=None):
 
     process_this_frame = True
 
-    while True:        
+    while True:
         # Grab a single frame of video
         ret, frame = video_capture.read()
 
@@ -134,7 +124,7 @@ class CamApp(App):
         # Initialize some variables
         face_locations = []
 
-        process_this_frame = True     
+        process_this_frame = True
         # Grab a single frame of video
         ret, frame = self.capture.read()
 
