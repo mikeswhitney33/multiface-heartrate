@@ -78,9 +78,9 @@ class CamApp(App):
 
             self.queue.append(self.crop_center(np.array(frame[top:bottom, left:right,:]), 80, 80))
 
-            if len(self.queue) >= 30:
-                frames = np.array(self.queue[:30])
-                self.queue = []
+            if len(self.queue) >= self.capture.get(cv2.CAP_PROP_FPS)*5:
+                frames = np.array(self.queue[:])
+                self.queue.pop(0)
                 self.hr = evm.find_heart_rate(frames, self.capture.get(cv2.CAP_PROP_FPS), 0.8, 1.0, alpha=20)
 
             font = cv2.FONT_HERSHEY_DUPLEX
