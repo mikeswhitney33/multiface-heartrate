@@ -9,6 +9,7 @@ import numpy as np
 
 import face_recognition
 import cv2
+import time
 
 from evm import evm
 
@@ -21,7 +22,10 @@ class CamApp(App):
         #opencv2 stuffs
         self.capture = cv2.VideoCapture(0)
         self.queue = []
+        self.times = []
+        self.bpms = [0]
         self.hr = 0
+        self.t0 = time.time()
 
         Clock.schedule_interval(self.update, 1.0/33.0)
         return layout
@@ -76,23 +80,29 @@ class CamApp(App):
 
             # faces.append(frame[top:bottom, left:right,:])
 
+            # self.queue.append([self.crop_center(np.array(frame[top:bottom, left:right,:]), 80, 80), time.time() - self.t0])
             self.queue.append(self.crop_center(np.array(frame[top:bottom, left:right,:]), 80, 80))
+            self.times.append(time.time() - self.t0)
 
-            if len(self.queue) >= self.capture.get(cv2.CAP_PROP_FPS)*5:
-                frames = np.array(self.queue[:])
-                self.queue.pop(0)
-                self.hr = evm.find_heart_rate(frames, self.capture.get(cv2.CAP_PROP_FPS), 0.8, 1.0, alpha=20)
+
+            # if len(self.queue) >= self.capture.get(cv2.CAP_PROP_FPS)*5:
+            if len(self.queue) > 10:
+                self.queue = self.queue[-100:]
+                self.times = self.times[-100:]
+                self.bpms = self.bpms[-100:]
+                frames = np.array(self.queue)
+                
+
+                self.bpms.append(evm.find_heart_rate(frames, self.times, self.capture.get(cv2.CAP_PROP_FPS), 0.6, 1.0, alpha=20))
 
             font = cv2.FONT_HERSHEY_DUPLEX
 
             # Draw a label with a name below the face
             cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-            cv2.putText(frame, str(self.hr), (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            cv2.putText(frame, "{}".format(int(np.mean(self.bpms))), (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
         self.write_frame(frame)
 
 if __name__ == '__main__':
     # just_cv2()
     CamApp().run()
-    video_capture.release()
-    cv2.destroyAllWindows()

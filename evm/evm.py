@@ -1,25 +1,56 @@
 import argparse
 import numpy as np
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, detrend
+from scipy.stats import mode
 
 import evm.utils as utils
 
 
-def find_heart_rate(vid, fps, low, high, levels=3, alpha=20):
+def find_heart_rate(vid, times, fps, low, high, levels=3, alpha=20):
 	res = magnify_color(vid, fps, low, high, levels, alpha)
+	num_frames = vid.shape[0]
+	
+	# partitions = np.split(res, 5)
+
+	true_fps = num_frames / (times[-1] - times[0])
+
 	avg = np.mean(res, axis=(1, 2, 3))
-	peaks, _ = find_peaks(avg, distance=10)
-	beats = peaks.shape[0]
-	num_frames = avg.shape[0]
-	seconds = num_frames / fps
-	rate = 60 * beats / seconds
-	print("""Beats: {}
-Num Frames: {}
-Frames Per Second: {}
-Seconds: {}
-Heart Rate: {}
-""".format(beats, num_frames, fps, seconds, rate))
-	return rate
+	even_times = np.linspace(times[0], times[-1], num_frames)
+	
+	processed = detrend(avg)#detrend the signal to avoid interference of light change
+	interpolated = np.interp(even_times, times, processed) #interpolation by 1
+	interpolated = np.hamming(num_frames) * interpolated#make the signal become more periodic (advoid spectral leakage)
+	norm = interpolated/np.linalg.norm(interpolated)
+	raw = np.fft.rfft(norm*30)
+	
+	freqs = float(true_fps) / num_frames * np.arange(num_frames / 2 + 1)
+	freqs_ = 60. * freqs
+	
+	fft = np.abs(raw)**2#get amplitude spectrum
+
+	idx = np.where((freqs_ > 50) & (freqs_ < 180))#the range of frequency that HR is supposed to be within 
+	pruned = fft[idx]
+	pfreq = freqs_[idx]
+	
+	freqs = pfreq 
+	fft = pruned
+	
+	idx2 = np.argmax(pruned)#max in the range can be HR
+	
+	bpm = freqs[idx2]
+	return bpm
+	# peaks, _ = find_peaks(avg, distance=18)
+	# beats = peaks.shape[0]
+
+	# seconds = num_frames / fps
+	# rate = 60.0 * beats / seconds
+	# print("""Beats: {}
+# Num Frames: {}
+# Frames Per Second: {}
+# Seconds: {}
+# Heart Rate: {}
+# """.format(beats, num_frames, fps, seconds, rate))
+	# return rate
 
 
 def magnify_color(vid, fps, low, high, levels=3, alpha=20):
