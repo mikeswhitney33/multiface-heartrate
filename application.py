@@ -1,17 +1,14 @@
+import time
+
 from kivy.app import App
-from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
-
 import numpy as np
-
 import face_recognition
 import cv2 as cv
-import time
-
-from evm import evm
+from evm import find_heart_rate
 
 
 """
@@ -66,7 +63,7 @@ class FaceQueue(object):
             frames = np.array(self.queue)
 
             try:
-                hr = evm.find_heart_rate(frames, self.times, fps, .6, 1, alpha=20)
+                hr = find_heart_rate(frames, self.times, fps, .6, 1, alpha=20)
 
                 self.bpms.append(hr)
             except:
